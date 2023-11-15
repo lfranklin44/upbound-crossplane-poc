@@ -1,0 +1,46 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: fhndatabricks.databricks.org
+spec:
+  group: databricks.org 
+  names:
+    kind: FHNDataBricks 
+    plural: fhndatabricks 
+  connectionSecretKeys:
+  - kubeconfig
+  versions:
+  - name: v1alpha1
+    served: true
+    referenceable: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            type: object
+            properties:
+              parameters:
+                type: object
+                properties:
+                  databricksNSGName:
+                    type: string 
+                  virtualNetworkId:
+                    type: string 
+                  privateSubnetNetworkSecurityGroupAssociationId:
+                    type: string 
+                  publicSubnetNetworkSecurityGroupAssociationId:
+                    type: string 
+                  resourceGroupName:
+                    type: string 
+                  mngedResourceGroupName:
+                    type: string 
+                required:
+                  - databricksNSGName
+                  - resourceGroupName 
+                  - mngedResourceGroupName 
+                  - virtualNetworkId
+                  - privateSubnetNetworkSecurityGroupAssociationId
+                  - publicSubnetNetworkSecurityGroupAssociationId
+            required:
+              - parameters
