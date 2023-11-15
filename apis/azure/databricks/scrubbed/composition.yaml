@@ -20,8 +20,8 @@ spec:
           providerConfigRef:
             name: azure-provider-config
           forProvider:
-            location: West Central US 
-            #resourceGroupName: rg-crossplane-poc-2
+            location: blah-region 
+            #resourceGroupName: blah-rg
             resourceGroupNameSelector:
                 matchLabels:
                         purpose: crossplane-poc
@@ -62,7 +62,7 @@ spec:
         - fromFieldPath: "spec.parameters.virtualNetworkId"
           toFieldPath: "spec.forProvider.customParameters[0].virtualNetworkId"
 
-    - name: snet-fhn-apidal-nonprod-qa-wcus-004
+    - name: subnet-004
       base:
         apiVersion: network.azure.upbound.io/v1beta1
         kind: Subnet
@@ -80,11 +80,11 @@ spec:
                 serviceDelegation:
                   - name: Microsoft.Databricks/workspaces
             addressPrefixes:
-              - 100.64.15.0/25
-            resourceGroupName: rg-fhn-apidal-nonprod 
-            virtualNetworkName: vnet-fhn-apidal-nonprod-wcus-001
+              - blah 
+            resourceGroupName: vnet-rg 
+            virtualNetworkName: vnets-001
 
-    - name: snet-fhn-apidal-nonprod-qa-wcus-005
+    - name: subnet-004 
       base:
         apiVersion: network.azure.upbound.io/v1beta1
         kind: Subnet
@@ -102,9 +102,9 @@ spec:
                 serviceDelegation:
                   - name: Microsoft.Databricks/workspaces
             addressPrefixes:
-              - 100.64.15.128/25
-            resourceGroupName: rg-fhn-apidal-nonprod 
-            virtualNetworkName: vnet-fhn-apidal-nonprod-wcus-001
+              - blah 
+            resourceGroupName: vnet-rg 
+            virtualNetworkName: vent-001
 
     - name: pub-databricks-nsg 
       base:
@@ -117,7 +117,6 @@ spec:
           providerConfigRef:
              name: azure-provider-config
           forProvider:
-            #networkSecurityGroupId: /subscriptions/d076aac9-929f-4e58-b843-80641e7f7f15/resourceGroups/rg-crossplane-poc-2/providers/Microsoft.Network/networkSecurityGroups/databricksnsgekrhzk3ezyrqu 
             networkSecurityGroupIdSelector: 
               matchLabels:
                   purpose: databricks-nsg-crossplane
@@ -136,7 +135,6 @@ spec:
           providerConfigRef:
              name: azure-provider-config
           forProvider:
-            #networkSecurityGroupId: /subscriptions/d076aac9-929f-4e58-b843-80641e7f7f15/resourceGroups/rg-crossplane-poc-2/providers/Microsoft.Network/networkSecurityGroups/databricksnsgekrhzk3ezyrqu 
             networkSecurityGroupIdSelector: 
               matchLabels:
                   purpose: databricks-nsg-crossplane
@@ -157,82 +155,13 @@ spec:
           providerConfigRef:
             name: azure-provider-config
           forProvider:
-            location: West Central US 
-            resourceGroupName: rg-crossplane-poc-2
+            location: blah-region 
+            resourceGroupName: blah-rg
             #resourceGroupNameSelector:
             #  matchLabels:
             #    testing.upbound.io/example-name: virthubrtableroute-rg
             securityRule:
-                    - name: "Microsoft.Databricks-workspaces_UseOnly_databricks-worker-to-worker-inbound"
-                      access:  "Allow"
-                      description: "Required for worker nodes communication within a cluster."
-                      protocol: "*"
-                      sourcePortRange: "*"
-                      destinationPortRange: "*"
-                      sourceAddressPrefix: "VirtualNetwork"
-                      destinationAddressPrefix: "VirtualNetwork"
-                      priority: 100
-                      direction: "Inbound"
-                    - name: "Microsoft.Databricks-workspaces_UseOnly_databricks-worker-to-worker-inbound"
-                      description: "Required for worker nodes communication within a cluster."
-                      protocol: "*"
-                      sourcePortRange: "*"
-                      destinationPortRange: "*"
-                      sourceAddressPrefix: "VirtualNetwork"
-                      destinationAddressPrefix: "VirtualNetwork"
-                      access: "Allow"
-                      priority: 100
-                      direction: "Inbound"
-                    - name: "Microsoft.Databricks-workspaces_UseOnly_databricks-worker-to-worker-outbound"
-                      description: "Required for worker nodes communication within a cluster."
-                      protocol: "*"
-                      sourcePortRange: "*"
-                      destinationPortRange: "*"
-                      sourceAddressPrefix: "VirtualNetwork"
-                      destinationAddressPrefix: "VirtualNetwork"
-                      access: "Allow"
-                      priority: 100
-                      direction: "Outbound"
-                    - name: "Microsoft.Databricks-workspaces_UseOnly_databricks-worker-to-databricks-webapp"
-                      description: "Required for workers communication with Databricks Webapp."
-                      protocol: "Tcp"
-                      sourcePortRange: "*"
-                      destinationPortRange: "443"
-                      sourceAddressPrefix: "VirtualNetwork"
-                      destinationAddressPrefix: "AzureDatabricks"
-                      access: "Allow"
-                      priority: 101
-                      direction: "Outbound"
-                    - name: "Microsoft.Databricks-workspaces_UseOnly_databricks-worker-to-sql"
-                      description: "Required for workers communication with Azure SQL services."
-                      protocol: "Tcp"
-                      sourcePortRange: "*"
-                      destinationPortRange: "3306"
-                      sourceAddressPrefix: "VirtualNetwork"
-                      destinationAddressPrefix: "Sql"
-                      access: "Allow"
-                      priority: 102
-                      direction: "Outbound"
-                    - name: "Microsoft.Databricks-workspaces_UseOnly_databricks-worker-to-storage"
-                      description: "Required for workers communication with Azure Storage services."
-                      protocol: "Tcp"
-                      sourcePortRange: "*"
-                      destinationPortRange: "443"
-                      sourceAddressPrefix: "VirtualNetwork"
-                      destinationAddressPrefix: "Storage"
-                      access: "Allow"
-                      priority: 103
-                      direction: "Outbound"
-                    - name: "Microsoft.Databricks-workspaces_UseOnly_databricks-worker-to-eventhub"
-                      description: "Required for worker communication with Azure Eventhub services."
-                      protocol: "Tcp"
-                      sourcePortRange: "*"
-                      destinationPortRange: "9093"
-                      sourceAddressPrefix: "VirtualNetwork"
-                      destinationAddressPrefix: "EventHub"
-                      access: "Allow"
-                      priority: 104
-                      direction: "Outbound"
+                #Removed
       patches:
         - fromFieldPath: "spec.parameters.databricksNSGName"
           toFieldPath: "metadata.annotations[crossplane.io/external-name]"
