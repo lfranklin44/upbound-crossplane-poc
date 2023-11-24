@@ -1,0 +1,68 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: fhndatabricks.databricks.org
+spec:
+  group: databricks.org 
+  names:
+    kind: FHNDataBricks 
+    plural: fhndatabricks 
+  claimNames:
+    kind: FHNDataBricksClaim
+    plural: fhndatabricksclaims 
+  connectionSecretKeys:
+  - kubeconfig
+  versions:
+  - name: v1alpha1
+    served: true
+    referenceable: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            type: object
+            properties:
+              compositionRevisionSelector:
+                type: object 
+              parameters:
+                type: object
+                properties:
+                  virtualNetworkId:
+                    type: string 
+                  resourceGroupName:
+                    type: string 
+                  mngedResourceGroupName:
+                    type: string 
+                  compositionRevision:
+                    type: string 
+                  privateSubnet:
+                    type: array
+                    items:
+                      type: string 
+                  publicSubnet:
+                    type: array
+                    items:
+                      type: string 
+                required:
+                  - resourceGroupName 
+                  - mngedResourceGroupName 
+                  - virtualNetworkId
+            required:
+              - parameters
+              - compositionRevisionSelector 
+          status:
+            type: object
+            properties:
+              nsg:
+                description: Network SecurityGroup information
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
+              nsg-assoc-1:
+                description: Network SecurityGroup Association 1 information
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
+              nsg-assoc-2:
+                description: Network SecurityGroup Association 2 information
+                type: object
+                x-kubernetes-preserve-unknown-fields: true

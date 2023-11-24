@@ -1,0 +1,17 @@
+apiVersion: databricks.org/v1alpha1
+kind: FHNDataBricksClaim
+metadata:
+  name: xp-fhn-databricks-poc-2 
+  namespace: crossplane-system
+spec:
+  parameters:
+    virtualNetworkId: vnet-id 
+    resourceGroupName: rg-crossplane-poc-2
+    mngedResourceGroupName: rg-databricks-poc-2
+    compositionRevision: v1.1
+  compositionSelector:
+    matchLabels:
+      provider: databricks-crossplane 
+  compositionRevisionSelector:
+    matchLabels:
+      revision: v1.1
