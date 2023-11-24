@@ -1,0 +1,321 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: fhndatabricks.databricks.org
+  labels:
+     provider: databricks-crossplane
+     revision: v1.2
+spec:
+  resources:
+
+    - name: test-crossplane-rg
+      base:
+        apiVersion: azure.upbound.io/v1beta1
+        kind: ResourceGroup
+        metadata:
+          annotations: 
+            crossplane.io/external-name: crossplane-rg # patched
+          name: crossplane-rg #patched 
+          labels:
+            purpose: crossplane-poc
+            revision: blah # patched
+        spec:
+          providerConfigRef:
+            name: azure-provider-config
+          forProvider:
+            location: West Central US 
+            tags:
+              provisioner: crossplane
+
+      patches:
+        - fromFieldPath: "spec.parameters.resourceGroupName"
+          toFieldPath: "metadata.name"
+        - fromFieldPath: "spec.parameters.resourceGroupName"
+          toFieldPath: "metadata.annotations[crossplane.io/external-name]"
+        - fromFieldPath: "spec.parameters.compositionRevision"
+          toFieldPath: metadata.labels['revision']
+
+    - name: test-databricks-crossplane 
+      base:
+        apiVersion: databricks.azure.upbound.io/v1beta1
+        kind: Workspace
+        metadata:
+          annotations:
+            meta.upbound.io/example-id: databricks/v1beta1/workspace
+          labels:
+            testing.upbound.io/example-name: test-databricks-crossplane
+          name: test-databricks-crossplane 
+        spec:
+          providerConfigRef:
+            name: azure-provider-config
+          forProvider:
+            location: West Central US 
+            resourceGroupNameSelector:
+                matchControllerRef: true
+                matchLabels:
+                        purpose: crossplane-poc
+                        revision: patch-me #patched
+            sku: trial 
+            tags:
+              purpose: poc
+              deployment-type: crossplane
+            managedResourceGroupName: rg-databricks-poc-2 # patched
+            customParameters:
+                - virtualNetweorkId: blah #patched
+                  publicSubnetNetworkSecurityGroupAssociationId: nsg-id # patched 
+                  privateSubnetNetworkSecurityGroupAssociationId: nsg-id # patched 
+                  noPublicIp: true 
+                  privateSubnetNameSelector: 
+                        matchControllerRef: true
+                        matchLabels:
+                                purpose: pricrossplane
+                                revision: patch-me  #patched
+                  publicSubnetNameSelector: 
+                        matchControllerRef: true
+                        matchLabels:
+                                purpose: pubcrossplane
+                                revision: patch-me #patched
+
+      patches:
+        - fromFieldPath: "spec.parameters.resourceGroupName"
+          toFieldPath: "spec.forProvider.resourceGroupName"
+        - fromFieldPath: "spec.parameters.mngedResourceGroupName"
+          toFieldPath: "spec.forProvider.managedResourceGroupName"
+        - fromFieldPath: "metadata.name"
+          toFieldPath: "metadata.name"
+        - fromFieldPath: "metadata.name"
+          toFieldPath: "spec.resources.name"
+        - fromFieldPath: "status.nsg-assoc-1.networkSecurityGroupId"
+          toFieldPath: "spec.forProvider.customParameters[0].privateSubnetNetworkSecurityGroupAssociationId"
+          policy:
+            fromFieldPath: Required
+        - fromFieldPath: "status.nsg-assoc-2.networkSecurityGroupId"
+          toFieldPath: "spec.forProvider.customParameters[0].publicSubnetNetworkSecurityGroupAssociationId"
+          policy:
+            fromFieldPath: Required
+        - fromFieldPath: "spec.parameters.virtualNetworkId"
+          toFieldPath: "spec.forProvider.customParameters[0].virtualNetworkId"
+        - fromFieldPath: "spec.parameters.compositionRevision"
+          toFieldPath: metadata.labels["revision"]
+        - fromFieldPath: "spec.parameters.compositionRevision"
+          toFieldPath: "spec.forProvider.customParameters[0].privateSubnetNameSelector.matchLabels['revision']"
+        - fromFieldPath: "spec.parameters.compositionRevision"
+          toFieldPath: "spec.forProvider.customParameters[0].publicSubnetNameSelector.matchLabels['revision']"
+
+    - name: snet-fhn-apidal-nonprod-qa-wcus-004
+      base:
+        apiVersion: network.azure.upbound.io/v1beta1
+        kind: Subnet
+        metadata:
+          #name: snet-fhn-apidal-nonprod-qa-wcus-004
+          labels:
+                  purpose: pricrossplane
+                  subnet-purpose: crossplane-poc 
+                  revision: patch-me
+        spec:
+          providerConfigRef:
+             name: azure-provider-config
+          forProvider:
+            delegation:
+              - name: pri-delegation
+                serviceDelegation:
+                  - name: Microsoft.Databricks/workspaces
+            addressPrefixes:
+              - 100.64.15.128/26
+            resourceGroupName: where-my-vnet-resides 
+            virtualNetworkName: existing-vnet
+
+      patches:
+        - fromFieldPath: "spec.parameters.compositionRevision"
+          toFieldPath: metadata.labels['revision']
+
+    - name: snet-fhn-apidal-nonprod-qa-wcus-005
+      base:
+        apiVersion: network.azure.upbound.io/v1beta1
+        kind: Subnet
+        metadata:
+          #name: snet-fhn-apidal-nonprod-qa-wcus-005
+          labels:
+                  purpose: pubcrossplane
+                  subnet-purpose: crossplane-poc 
+                  revision: patch-me
+        spec:
+          providerConfigRef:
+             name: azure-provider-config
+          forProvider:
+            delegation:
+              - name: pub-delegation
+                serviceDelegation:
+                  - name: Microsoft.Databricks/workspaces
+            addressPrefixes:
+              - 100.64.15.192/26
+            resourceGroupName: where-my-vnet-resides 
+            virtualNetworkName: existing-vnet
+
+      patches:
+        - fromFieldPath: "spec.parameters.compositionRevision"
+          toFieldPath: metadata.labels['revision']
+
+    - name: pub-databricks-nsg 
+      base:
+        apiVersion: network.azure.upbound.io/v1beta1
+        kind: SubnetNetworkSecurityGroupAssociation
+        metadata:
+          labels:
+                  purpose: crossplane-poc
+        spec:
+          providerConfigRef:
+             name: azure-provider-config
+          forProvider:
+            networkSecurityGroupIdSelector: 
+              matchLabels:
+                  purpose: databricks-nsg-crossplane
+                  revision: patch-me #patched
+            subnetIdSelector:
+              matchLabels:
+                  purpose: pubcrossplane
+                  revision: patch-me #patched
+      patches:
+        - type: ToCompositeFieldPath
+          fromFieldPath: status.atProvider
+          toFieldPath: status.nsg-assoc-1
+        - fromFieldPath: "spec.parameters.compositionRevision"
+          toFieldPath: metadata.labels["revision"]
+        - fromFieldPath: "spec.parameters.compositionRevision"
+          toFieldPath: "spec.forProvider.networkSecurityGroupIdSelector.matchLabels['revision']"
+        - fromFieldPath: "spec.parameters.compositionRevision"
+          toFieldPath: "spec.forProvider.subnetIdSelector.matchLabels['revision']"
+
+    - name: pri-databricks-nsg
+      base:
+        apiVersion: network.azure.upbound.io/v1beta1
+        kind: SubnetNetworkSecurityGroupAssociation
+        metadata:
+          labels:
+                  purpose: crossplane-poc
+        spec:
+          providerConfigRef:
+             name: azure-provider-config
+          forProvider:
+            networkSecurityGroupIdSelector: 
+              matchLabels:
+                  purpose: databricks-nsg-crossplane
+                  revision: patch-me #patched
+            subnetIdSelector:
+              matchLabels:
+                  purpose: pricrossplane
+                  revision: patch-me #patched
+      patches:
+        - type: ToCompositeFieldPath
+          fromFieldPath: status.atProvider
+          toFieldPath: status.nsg-assoc-2
+        - fromFieldPath: "spec.parameters.compositionRevision"
+          toFieldPath: metadata.labels["revision"]
+        - fromFieldPath: "spec.parameters.compositionRevision"
+          toFieldPath: "spec.forProvider.networkSecurityGroupIdSelector.matchLabels['revision']"
+        - fromFieldPath: "spec.parameters.compositionRevision"
+          toFieldPath: "spec.forProvider.subnetIdSelector.matchLabels['revision']"
+
+    - name: databricks-nsg 
+      base:
+        apiVersion: network.azure.upbound.io/v1beta1
+        kind: SecurityGroup
+        metadata:
+          #annotations: 
+          #  crossplane.io/external-name: databricks-nsg
+          labels:
+                  purpose: databricks-nsg-crossplane
+                  revision: patch-me #patched
+        spec:
+          providerConfigRef:
+            name: azure-provider-config
+          forProvider:
+            location: West Central US 
+            #resourceGroupName: rg-crossplane-poc-2
+            resourceGroupNameSelector:
+                matchControllerRef: true
+                matchLabels:
+                        purpose: crossplane-poc
+                        revision: patch-me #patched
+            securityRule:
+                    - name: "Microsoft.Databricks-workspaces_UseOnly_databricks-worker-to-worker-inbound"
+                      access:  "Allow"
+                      description: "Required for worker nodes communication within a cluster."
+                      protocol: "*"
+                      sourcePortRange: "*"
+                      destinationPortRange: "*"
+                      sourceAddressPrefix: "VirtualNetwork"
+                      destinationAddressPrefix: "VirtualNetwork"
+                      priority: 100
+                      direction: "Inbound"
+                    - name: "Microsoft.Databricks-workspaces_UseOnly_databricks-worker-to-worker-inbound"
+                      description: "Required for worker nodes communication within a cluster."
+                      protocol: "*"
+                      sourcePortRange: "*"
+                      destinationPortRange: "*"
+                      sourceAddressPrefix: "VirtualNetwork"
+                      destinationAddressPrefix: "VirtualNetwork"
+                      access: "Allow"
+                      priority: 100
+                      direction: "Inbound"
+                    - name: "Microsoft.Databricks-workspaces_UseOnly_databricks-worker-to-worker-outbound"
+                      description: "Required for worker nodes communication within a cluster."
+                      protocol: "*"
+                      sourcePortRange: "*"
+                      destinationPortRange: "*"
+                      sourceAddressPrefix: "VirtualNetwork"
+                      destinationAddressPrefix: "VirtualNetwork"
+                      access: "Allow"
+                      priority: 100
+                      direction: "Outbound"
+                    - name: "Microsoft.Databricks-workspaces_UseOnly_databricks-worker-to-databricks-webapp"
+                      description: "Required for workers communication with Databricks Webapp."
+                      protocol: "Tcp"
+                      sourcePortRange: "*"
+                      destinationPortRange: "443"
+                      sourceAddressPrefix: "VirtualNetwork"
+                      destinationAddressPrefix: "AzureDatabricks"
+                      access: "Allow"
+                      priority: 101
+                      direction: "Outbound"
+                    - name: "Microsoft.Databricks-workspaces_UseOnly_databricks-worker-to-sql"
+                      description: "Required for workers communication with Azure SQL services."
+                      protocol: "Tcp"
+                      sourcePortRange: "*"
+                      destinationPortRange: "3306"
+                      sourceAddressPrefix: "VirtualNetwork"
+                      destinationAddressPrefix: "Sql"
+                      access: "Allow"
+                      priority: 102
+                      direction: "Outbound"
+                    - name: "Microsoft.Databricks-workspaces_UseOnly_databricks-worker-to-storage"
+                      description: "Required for workers communication with Azure Storage services."
+                      protocol: "Tcp"
+                      sourcePortRange: "*"
+                      destinationPortRange: "443"
+                      sourceAddressPrefix: "VirtualNetwork"
+                      destinationAddressPrefix: "Storage"
+                      access: "Allow"
+                      priority: 103
+                      direction: "Outbound"
+                    - name: "Microsoft.Databricks-workspaces_UseOnly_databricks-worker-to-eventhub"
+                      description: "Required for worker communication with Azure Eventhub services."
+                      protocol: "Tcp"
+                      sourcePortRange: "*"
+                      destinationPortRange: "9093"
+                      sourceAddressPrefix: "VirtualNetwork"
+                      destinationAddressPrefix: "EventHub"
+                      access: "Allow"
+                      priority: 104
+                      direction: "Outbound"
+      patches:
+        - type: ToCompositeFieldPath
+          fromFieldPath: status.atProvider
+          toFieldPath: status.nsg
+        - fromFieldPath: "spec.parameters.compositionRevision"
+          toFieldPath: "spec.forProvider.resourceGroupNameSelector.matchLabels['revision']"
+        - fromFieldPath: "spec.parameters.compositionRevision"
+          toFieldPath: "metadata.labels['revision']"
+  compositeTypeRef:
+    apiVersion: databricks.org/v1alpha1
+    kind: FHNDataBricks
